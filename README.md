@@ -108,6 +108,23 @@ El script apaga el servidor principal, envía mensajes desde el segundo servidor
 fija durante la caída, lo levanta y mide el tiempo hasta que su historial contiene todos
 los mensajes. Escribe `experiment/datos/resultados.csv` e imprime un resumen estadístico.
 
+Gráfica para el póster a partir de los CSV:
+
+```bash
+pip install matplotlib
+python3 experiment/graficar.py experiment/datos/resultados.csv resultados2.csv \
+    --out experiment/datos/grafica_poster.png
+```
+
+Genera barras por duración de caída con media, desviación y unidades en segundos.
+
+## Póster
+
+`poster/poster_g2.pptx` es una plantilla A1 vertical con las secciones del enunciado ya
+redactadas. Completar: nombres de integrantes, la figura `grafica_poster.png`, el
+diagrama de contenedores y los hallazgos de la sesión de interoperabilidad. Exportar a
+PDF para la entrega.
+
 ## Documentación
 
 - `docs/arquitectura.md` — diagrama de contenedores, redes y volúmenes.
