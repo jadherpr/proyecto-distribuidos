@@ -93,7 +93,17 @@ class Database:
                 "SELECT id, from_user, origin, lamport, sent_at, body "
                 "FROM messages ORDER BY lamport, origin"
             ).fetchall()
-        return [dict(r) for r in rows]
+        return [
+            {
+                "id": r["id"],
+                "from": r["from_user"],
+                "origin": r["origin"],
+                "lamport": r["lamport"],
+                "sent_at": r["sent_at"],
+                "body": r["body"],
+            }
+            for r in rows
+        ]
 
     def max_lamport(self) -> int:
         with self._lock:

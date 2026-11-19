@@ -41,15 +41,17 @@ def color_for(origin: str, own_origin: str) -> str:
 
 
 def render(message: dict, own_origin: str, seen: set[str]) -> bool:
-    if message["id"] in seen:
+    message_id = message.get("id")
+    sender = message.get("from", message.get("from_user", "?"))
+    origin = message.get("origin", "?")
+    lamport = message.get("lamport", "?")
+    body = message.get("body", "")
+    if message_id is None or message_id in seen:
         return False
-    seen.add(message["id"])
-    color = color_for(message["origin"], own_origin)
-    tag = "" if message["origin"] == own_origin else " [otro grupo]"
-    print(
-        f"{color}{BOLD}{message['from']}{tag}{RESET} "
-        f"{DIM}(L{message['lamport']}){RESET}: {message['body']}"
-    )
+    seen.add(message_id)
+    color = color_for(origin, own_origin)
+    tag = "" if origin == own_origin else " [otro grupo]"
+    print(f"{color}{BOLD}{sender}{tag}{RESET} {DIM}(L{lamport}){RESET}: {body}")
     return True
 
 
