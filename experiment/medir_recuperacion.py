@@ -78,9 +78,12 @@ def run_repetition(rep: int, args) -> dict:
     deadline = start + args.timeout
     recovered_at = None
     while time.time() < deadline:
-        if target_has_all(args.target_url, ids):
-            recovered_at = time.time()
-            break
+        try:
+            if target_has_all(args.target_url, ids):
+                recovered_at = time.time()
+                break
+        except (OSError, ValueError):
+            pass  # el servidor aun esta arrancando
         time.sleep(0.2)
 
     if recovered_at is None:
