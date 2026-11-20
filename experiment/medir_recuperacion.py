@@ -68,7 +68,7 @@ def run_repetition(rep: int, args) -> dict:
     docker_compose(["stop", args.target], args.compose_dir, args.compose_file)
     time.sleep(args.outage)
 
-    print(f"enviando {args.count} mensajes a {1.0 / args.rate if args.rate > 0 else 0:.2f} msg/s desde {args.sender} ...")
+    print(f"enviando {args.count} mensajes a {args.rate:.2f} msg/s desde {args.sender} ...")
     ids = send_messages(args.sender_url, args.sender_user, args.count, args.rate, prefix)
 
     print(f"levantando {args.target} ...")
