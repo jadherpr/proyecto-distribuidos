@@ -1,5 +1,9 @@
 # Chat distribuido — Grupo g2
 
+## Integrantes
+
+Jadher Prada · [Compañera 1] · [Compañera 2]
+
 Proyecto final de Sistemas Distribuidos (UIS · EISI). Servidor de chat en contenedores
 que se registra en el servidor central del curso y participa en la sala global `#general`.
 
