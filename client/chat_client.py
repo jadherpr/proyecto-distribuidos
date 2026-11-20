@@ -1,6 +1,8 @@
 import argparse
 import json
+import os
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -15,6 +17,8 @@ COLORS = {
 RESET = "\033[0m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
+
+print_lock = threading.Lock()
 
 
 def request(method: str, url: str, payload: dict | None = None) -> dict:
@@ -40,7 +44,11 @@ def color_for(origin: str, own_origin: str) -> str:
     return COLORS.get(origin, "\033[90m")
 
 
-def render(message: dict, own_origin: str, seen: set[str]) -> bool:
+def prompt_line(full_user: str) -> str:
+    return f"{BOLD}{full_user}>{RESET} "
+
+
+def render(message: dict, own_origin: str, seen: set[str], full_user: str) -> bool:
     message_id = message.get("id")
     sender = message.get("from", message.get("from_user", "?"))
     origin = message.get("origin", "?")
@@ -49,17 +57,47 @@ def render(message: dict, own_origin: str, seen: set[str]) -> bool:
     if message_id is None or message_id in seen:
         return False
     seen.add(message_id)
-    color = color_for(origin, own_origin)
-    tag = "" if origin == own_origin else " [otro grupo]"
-    print(f"{color}{BOLD}{sender}{tag}{RESET} {DIM}(L{lamport}){RESET}: {body}")
+    with print_lock:
+        print()
+        color = color_for(origin, own_origin)
+        tag = "" if origin == own_origin else " [otro grupo]"
+        print(f"{color}{BOLD}{sender}{tag}{RESET} {DIM}(L{lamport}){RESET}: {body}")
+        sys.stdout.write(prompt_line(full_user))
+        sys.stdout.flush()
     return True
 
 
+class Poller(threading.Thread):
+    def __init__(self, base: str, own_origin: str, seen: set[str], full_user: str, interval: float):
+        super().__init__(daemon=True)
+        self.base = base
+        self.own_origin = own_origin
+        self.seen = seen
+        self.full_user = full_user
+        self.interval = interval
+        self.stop_event = threading.Event()
+
+    def run(self) -> None:
+        while not self.stop_event.is_set():
+            try:
+                fresh = request("GET", f"{self.base}/messages")["messages"]
+                for message in fresh:
+                    render(message, self.own_origin, self.seen, self.full_user)
+            except SystemExit:
+                self.stop_event.set()
+                return
+            except Exception:
+                pass
+            time.sleep(self.interval)
+
+
 def main() -> None:
+    os.system("")
+
     parser = argparse.ArgumentParser(description="Cliente de chat del grupo")
     parser.add_argument("--server", required=True, help="URL del servidor del grupo, ej http://localhost:8000")
     parser.add_argument("--user", required=True, help="nombre local del usuario, ej ana")
-    parser.add_argument("--poll", type=float, default=2.0, help="segundos entre consultas de mensajes")
+    parser.add_argument("--poll", type=float, default=1.5, help="segundos entre consultas de mensajes")
     args = parser.parse_args()
 
     base = args.server.rstrip("/")
@@ -78,29 +116,26 @@ def main() -> None:
     seen: set[str] = set()
     history = request("GET", f"{base}/messages")["messages"]
     for message in history:
-        render(message, own_origin, seen)
-    print(f"--- conectado a {base} como {full_user}; escribe y presiona Enter ---")
+        render(message, own_origin, seen, full_user)
+
+    poller = Poller(base, own_origin, seen, full_user, args.poll)
+    poller.start()
+    sys.stdout.write(prompt_line(full_user))
+    sys.stdout.flush()
 
     while True:
         try:
-            body = input(f"{BOLD}{full_user}>{RESET} ")
+            body = input()
         except (EOFError, KeyboardInterrupt):
             print()
             break
         body = body.strip()
-        if not body:
-            time.sleep(0.1)
-        elif body == "/salir":
+        if body == "/salir":
             break
-        else:
+        elif body:
             request("POST", f"{base}/messages", {"from": full_user, "body": body})
-        try:
-            fresh = request("GET", f"{base}/messages")["messages"]
-        except SystemExit:
-            break
-        for message in fresh:
-            render(message, own_origin, seen)
-        time.sleep(args.poll)
+            sys.stdout.write(prompt_line(full_user))
+            sys.stdout.flush()
 
 
 if __name__ == "__main__":
