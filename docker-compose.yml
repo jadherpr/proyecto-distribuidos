@@ -4,7 +4,7 @@ services:
     container_name: ${GROUP_NAME:-g2}-server
     environment:
       GROUP_NAME: ${GROUP_NAME:-g2}
-      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8000}
+      PUBLIC_URL: ${PUBLIC_URL:-http://server:8000}
       CENTRAL_URL: ${CENTRAL_URL:-http://central:9000}
       PORT: 8000
       DB_PATH: /data/chat.db
